@@ -136,7 +136,11 @@ namespace Serilog.Events
         /// properties are mismatched with the template, the template will be
         /// returned with incomplete substitution.</returns>
         /// <exception cref="ArgumentNullException">When <paramref name="properties"/> is <code>null</code></exception>
+#if !NET35
         public string Render(IReadOnlyDictionary<string, LogEventPropertyValue> properties, IFormatProvider formatProvider = null)
+#else
+        public string Render(IDictionary<string, LogEventPropertyValue> properties, IFormatProvider formatProvider = null)
+#endif
         {
             var writer = new StringWriter(formatProvider);
             Render(properties, writer, formatProvider);
@@ -154,7 +158,11 @@ namespace Serilog.Events
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <exception cref="ArgumentNullException">When <paramref name="properties"/> is <code>null</code></exception>
         /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
+#if !NET35
         public void Render(IReadOnlyDictionary<string, LogEventPropertyValue> properties, TextWriter output, IFormatProvider formatProvider = null)
+#else
+        public void Render(IDictionary<string, LogEventPropertyValue> properties, TextWriter output, IFormatProvider formatProvider = null)
+#endif
         {
             if (properties == null) throw new ArgumentNullException(nameof(properties));
             if (output == null) throw new ArgumentNullException(nameof(output));

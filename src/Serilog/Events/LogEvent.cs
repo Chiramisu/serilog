@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -109,7 +109,11 @@ namespace Serilog.Events
         /// <summary>
         /// Properties associated with the event, including those presented in <see cref="LogEvent.MessageTemplate"/>.
         /// </summary>
+#if !NET35
         public IReadOnlyDictionary<string, LogEventPropertyValue> Properties => _properties;
+#else
+        public IDictionary<string, LogEventPropertyValue> Properties => _properties;
+#endif
 
         /// <summary>
         /// An exception associated with the event, or null.

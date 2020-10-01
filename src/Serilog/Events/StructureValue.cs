@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 // Copyright 2013-2015 Serilog Contributors
 //
@@ -53,7 +53,11 @@ namespace Serilog.Events
         /// <remarks>Not presented as a dictionary because dictionary construction is
         /// relatively expensive; it is cheaper to build a dictionary over properties only
         /// when the structure is of interest.</remarks>
+#if !NET35
         public IReadOnlyList<LogEventProperty> Properties => _properties;
+#else
+        public IList<LogEventProperty> Properties => _properties;
+#endif
 
         /// <summary>
         /// Render the value to the output.

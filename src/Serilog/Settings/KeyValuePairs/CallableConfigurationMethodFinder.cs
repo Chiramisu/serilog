@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,10 +26,18 @@ namespace Serilog.Settings.KeyValuePairs
         internal static IList<MethodInfo> FindConfigurationMethods(IEnumerable<Assembly> configurationAssemblies, Type configType)
         {
             var methods = configurationAssemblies
-                .SelectMany(a => a.ExportedTypes
+                .SelectMany(a =>
+#if !NET35
+                a.ExportedTypes
                     .Select(t => t.GetTypeInfo())
                     .Where(t => t.IsSealed && t.IsAbstract && !t.IsNested))
                 .SelectMany(t => t.DeclaredMethods)
+# else
+                a.GetExportedTypes()
+                    .Select(t => t.GetType())
+                    .Where(t => t.IsSealed && t.IsAbstract && !t.IsNested))
+                .SelectMany(t => t.GetMethods())
+#endif
                 .Where(m => m.IsStatic && m.IsPublic && m.IsDefined(typeof(ExtensionAttribute), false))
                 .Where(m => m.GetParameters()[0].ParameterType == configType)
                 .ToList();

@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2018 Serilog Contributors
+// Copyright 2013-2018 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,7 +34,11 @@ namespace Serilog.Settings.KeyValuePairs
     static class SurrogateConfigurationMethods
     {
         static readonly Dictionary<Type, MethodInfo[]> SurrogateMethodCandidates = typeof(SurrogateConfigurationMethods)
+#if !NET35
             .GetTypeInfo().DeclaredMethods
+#else
+            .GetType().GetMethods()
+#endif
             .GroupBy(m => m.GetParameters().First().ParameterType)
             .ToDictionary(g => g.Key, g => g.ToArray());
 

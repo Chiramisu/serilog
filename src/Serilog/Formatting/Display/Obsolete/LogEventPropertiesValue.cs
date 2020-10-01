@@ -1,4 +1,4 @@
-﻿// Copyright 2017 Serilog Contributors
+// Copyright 2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,10 +23,17 @@ namespace Serilog.Formatting.Display.Obsolete
     class LogEventPropertiesValue : LogEventPropertyValue
     {
         readonly MessageTemplate _template;
+#if !NET35
         readonly IReadOnlyDictionary<string, LogEventPropertyValue> _properties;
         readonly MessageTemplate _outputTemplate;
 
         public LogEventPropertiesValue(MessageTemplate template, IReadOnlyDictionary<string, LogEventPropertyValue> properties, MessageTemplate outputTemplate)
+#else
+        readonly IDictionary<string, LogEventPropertyValue> _properties;
+        readonly MessageTemplate _outputTemplate;
+
+        public LogEventPropertiesValue(MessageTemplate template, IDictionary<string, LogEventPropertyValue> properties, MessageTemplate outputTemplate)
+#endif
         {
             _template = template;
             _properties = properties;

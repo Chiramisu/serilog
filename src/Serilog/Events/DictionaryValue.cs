@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,7 +39,11 @@ namespace Serilog.Events
         /// <summary>
         /// The dictionary mapping.
         /// </summary>
+#if !NET35
         public IReadOnlyDictionary<ScalarValue, LogEventPropertyValue> Elements { get; }
+#else
+        public IDictionary<ScalarValue, LogEventPropertyValue> Elements { get; }
+#endif
 
         /// <summary>
         /// Render the value to the output.

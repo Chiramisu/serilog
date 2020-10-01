@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -137,19 +137,23 @@ namespace Serilog.Formatting.Json
             if (logEvent.Exception != null)
                 WriteException(logEvent.Exception, ref delim, output);
 
+#if !NET35
             if (logEvent.Properties.Count != 0)
                 WriteProperties(logEvent.Properties, output);
+#endif
 
             var tokensWithFormat = logEvent.MessageTemplate.Tokens
                 .OfType<PropertyToken>()
                 .Where(pt => pt.Format != null)
                 .GroupBy(pt => pt.PropertyName)
                 .ToArray();
-
+                
+#if !NET35
             if (tokensWithFormat.Length != 0)
             {
                 WriteRenderings(tokensWithFormat, logEvent.Properties, output);
             }
+#endif
 
             if (!_omitEnclosingObject)
             {
@@ -174,6 +178,7 @@ namespace Serilog.Formatting.Json
             _literalWriters[type] = (v, _, w) => writer(v, w);
         }
 
+#if !NET35
         /// <summary>
         /// Writes out individual renderings of attached properties
         /// </summary>
@@ -245,6 +250,7 @@ namespace Serilog.Formatting.Json
                 WriteJsonProperty(property.Key, property.Value, ref precedingDelimiter, output);
             }
         }
+#endif
 
         /// <summary>
         /// Writes out the attached exception
@@ -330,7 +336,11 @@ namespace Serilog.Formatting.Json
         /// Writes out a dictionary
         /// </summary>
         [Obsolete(ExtensionPointObsoletionMessage)]
+#if !NET35
         protected virtual void WriteDictionary(IReadOnlyDictionary<ScalarValue, LogEventPropertyValue> elements, TextWriter output)
+#else
+        protected virtual void WriteDictionary(IDictionary<ScalarValue, LogEventPropertyValue> elements, TextWriter output)
+#endif
         {
             output.Write("{");
             var delim = "";

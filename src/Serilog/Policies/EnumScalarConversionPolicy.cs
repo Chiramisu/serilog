@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2017 Serilog Contributors
+// Copyright 2013-2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,11 @@ namespace Serilog.Policies
     {
         public bool TryConvertToScalar(object value, out ScalarValue result)
         {
+#if !NET35
             if (value.GetType().GetTypeInfo().IsEnum)
+#else
+            if (value.GetType().GetType().IsEnum)
+#endif
             {
                 result = new ScalarValue(value);
                 return true;

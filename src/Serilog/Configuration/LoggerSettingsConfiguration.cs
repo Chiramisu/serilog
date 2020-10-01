@@ -1,4 +1,4 @@
-﻿// Copyright 2015 Serilog Contributors
+// Copyright 2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -62,9 +62,16 @@ namespace Serilog.Configuration
             return KeyValuePairs(uniqueSettings);
         }
 
+#if !NET35
         LoggerConfiguration KeyValuePairs(IReadOnlyDictionary<string, string> settings)
         {
             return Settings(new KeyValuePairSettings(settings));
         }
-    }
+#else
+        LoggerConfiguration KeyValuePairs(IDictionary<string, string> settings)
+        {
+            return Settings(new KeyValuePairSettings(settings));
+        }
+#endif
+}
 }

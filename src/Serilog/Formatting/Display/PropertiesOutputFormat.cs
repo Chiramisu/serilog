@@ -25,7 +25,11 @@ namespace Serilog.Formatting.Display
     {
         static readonly JsonValueFormatter JsonValueFormatter = new JsonValueFormatter("$type");
 
+#if !NET35
         public static void Render(MessageTemplate template, IReadOnlyDictionary<string, LogEventPropertyValue> properties, MessageTemplate outputTemplate, TextWriter output, string format, IFormatProvider formatProvider = null)
+#else
+        public static void Render(MessageTemplate template, IDictionary<string, LogEventPropertyValue> properties, MessageTemplate outputTemplate, TextWriter output, string format, IFormatProvider formatProvider = null)
+#endif
         {
             if (format?.Contains("j") == true)
             {

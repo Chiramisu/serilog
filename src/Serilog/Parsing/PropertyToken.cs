@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -76,6 +76,7 @@ namespace Serilog.Parsing
         /// </summary>
         public override int Length => _rawText.Length;
 
+#if !NET35
         /// <summary>
         /// Render the token to the output.
         /// </summary>
@@ -91,6 +92,7 @@ namespace Serilog.Parsing
 
             MessageTemplateRenderer.RenderPropertyToken(this, properties, output, formatProvider, isLiteral: false, isJson: false);
         }
+#endif
 
         /// <summary>
         /// The property name.

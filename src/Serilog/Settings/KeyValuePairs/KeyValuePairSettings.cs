@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -76,12 +76,21 @@ namespace Serilog.Settings.KeyValuePairs
             [typeof(LoggerDestructuringConfiguration)] = lc => lc.Destructure,
         };
 
+#if !NET35
         readonly IReadOnlyDictionary<string, string> _settings;
 
         public KeyValuePairSettings(IReadOnlyDictionary<string, string> settings)
         {
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         }
+#else
+        readonly IDictionary<string, string> _settings;
+
+        public KeyValuePairSettings(IDictionary<string, string> settings)
+        {
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        }
+#endif
 
         public void Configure(LoggerConfiguration loggerConfiguration)
         {
@@ -93,8 +102,14 @@ namespace Serilog.Settings.KeyValuePairs
 
             var declaredLevelSwitches = ParseNamedLevelSwitchDeclarationDirectives(directives);
 
+#if !NET35
             if (directives.TryGetValue(MinimumLevelDirective, out var minimumLevelDirective) &&
                 Enum.TryParse(minimumLevelDirective, out LogEventLevel minimumLevel))
+#else
+            bool truth = directives.TryGetValue(MinimumLevelDirective, out var minimumLevelDirective);
+            LogEventLevel minimumLevel = (LogEventLevel)Enum.Parse(typeof(LogEventLevel), minimumLevelDirective);
+            if (truth && minimumLevel.Equals(minimumLevelDirective))
+#endif
             {
                 loggerConfiguration.MinimumLevel.Is(minimumLevel);
             }
@@ -116,8 +131,12 @@ namespace Serilog.Settings.KeyValuePairs
                 dir.Key.StartsWith(MinimumLevelOverrideDirectivePrefix) && dir.Key.Length > MinimumLevelOverrideDirectivePrefix.Length))
             {
                 var namespacePrefix = minimumLevelOverrideDirective.Key.Substring(MinimumLevelOverrideDirectivePrefix.Length);
-
+#if !NET35
                 if (Enum.TryParse(minimumLevelOverrideDirective.Value, out LogEventLevel overriddenLevel))
+#else
+                LogEventLevel overriddenLevel = (LogEventLevel)Enum.Parse(typeof(LogEventLevel), minimumLevelOverrideDirective.Value);
+                if (overriddenLevel.Equals(minimumLevelOverrideDirective.Value))
+#endif
                 {
                     loggerConfiguration.MinimumLevel.Override(namespacePrefix, overriddenLevel);
                 }
@@ -167,7 +186,11 @@ namespace Serilog.Settings.KeyValuePairs
             return Regex.IsMatch(input, LevelSwitchNameRegex);
         }
 
+#if !NET35
         static IReadOnlyDictionary<string, LoggingLevelSwitch> ParseNamedLevelSwitchDeclarationDirectives(IReadOnlyDictionary<string, string> directives)
+#else
+        static IDictionary<string, LoggingLevelSwitch> ParseNamedLevelSwitchDeclarationDirectives(IDictionary<string, string> directives)
+#endif
         {
             var matchLevelSwitchDeclarations = new Regex(LevelSwitchDeclarationDirectiveRegex);
 
@@ -205,7 +228,11 @@ namespace Serilog.Settings.KeyValuePairs
             return namedSwitches;
         }
 
+#if !NET35
         static LoggingLevelSwitch LookUpSwitchByName(string switchName, IReadOnlyDictionary<string, LoggingLevelSwitch> declaredLevelSwitches)
+#else
+        static LoggingLevelSwitch LookUpSwitchByName(string switchName, IDictionary<string, LoggingLevelSwitch> declaredLevelSwitches)
+#endif
         {
             if (declaredLevelSwitches.TryGetValue(switchName, out var levelSwitch))
             {
@@ -215,7 +242,11 @@ namespace Serilog.Settings.KeyValuePairs
             throw new InvalidOperationException($"No LoggingLevelSwitch has been declared with name \"{switchName}\". You might be missing a key \"{LevelSwitchDirective}:{switchName}\"");
         }
 
+#if !NET35
         static object ConvertOrLookupByName(string valueOrSwitchName, Type type, IReadOnlyDictionary<string, LoggingLevelSwitch> declaredSwitches)
+#else
+        static object ConvertOrLookupByName(string valueOrSwitchName, Type type, IDictionary<string, LoggingLevelSwitch> declaredSwitches)
+#endif
         {
             if (type == typeof(LoggingLevelSwitch))
             {
@@ -224,7 +255,11 @@ namespace Serilog.Settings.KeyValuePairs
             return SettingValueConversions.ConvertToType(valueOrSwitchName, type);
         }
 
+#if !NET35
         static void ApplyDirectives(List<IGrouping<string, ConfigurationMethodCall>> directives, IList<MethodInfo> configurationMethods, object loggerConfigMethod, IReadOnlyDictionary<string, LoggingLevelSwitch> declaredSwitches)
+#else
+        static void ApplyDirectives(List<IGrouping<string, ConfigurationMethodCall>> directives, IList<MethodInfo> configurationMethods, object loggerConfigMethod, IDictionary<string, LoggingLevelSwitch> declaredSwitches)
+#endif
         {
             foreach (var directiveInfo in directives)
             {
@@ -247,19 +282,33 @@ namespace Serilog.Settings.KeyValuePairs
         {
             return candidateMethods
                 .Where(m => m.Name == name &&
+#if !NET35
                             m.GetParameters().Skip(1).All(p => p.HasDefaultValue || suppliedArgumentValues.Any(s => s.ArgumentName == p.Name)))
+#else
+                            m.GetParameters().Skip(1).All(p => null != p?.DefaultValue || suppliedArgumentValues.Any(s => s.ArgumentName == p.Name)))
+#endif
                 .OrderByDescending(m => m.GetParameters().Count(p => suppliedArgumentValues.Any(s => s.ArgumentName == p.Name)))
                 .FirstOrDefault();
         }
 
+#if !NET35
         internal static IEnumerable<Assembly> LoadConfigurationAssemblies(IReadOnlyDictionary<string, string> directives)
         {
             var configurationAssemblies = new List<Assembly> { typeof(ILogger).GetTypeInfo().Assembly };
+#else
+        internal static IEnumerable<Assembly> LoadConfigurationAssemblies(IDictionary<string, string> directives)
+        {
+            var configurationAssemblies = new List<Assembly> { typeof(ILogger).GetType().Assembly };
+#endif
 
             foreach (var usingDirective in directives.Where(d => d.Key.Equals(UsingDirective) ||
                                                                  d.Key.StartsWith(UsingDirectiveFullFormPrefix)))
             {
+#if !NET35
                 if (string.IsNullOrWhiteSpace(usingDirective.Value))
+#else
+                if (string.IsNullOrEmpty(usingDirective.Value.Trim()))
+#endif
                     throw new InvalidOperationException("A zero-length or whitespace assembly name was supplied to a serilog:using configuration statement.");
 
                 configurationAssemblies.Add(Assembly.Load(new AssemblyName(usingDirective.Value)));

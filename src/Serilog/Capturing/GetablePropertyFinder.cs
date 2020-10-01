@@ -25,12 +25,21 @@ namespace Serilog.Capturing
         {
             var seenNames = new HashSet<string>();
 
+#if !NET35
             var currentTypeInfo = type.GetTypeInfo();
 
             while (currentTypeInfo.AsType() != typeof(object))
             {
                 var unseenProperties = currentTypeInfo.DeclaredProperties.Where(p => p.CanRead &&
                     p.GetMethod.IsPublic && !p.GetMethod.IsStatic &&
+#else
+            var currentTypeInfo = type.GetType();
+
+            while (currentTypeInfo != typeof(object))
+            {
+                var unseenProperties = currentTypeInfo.GetProperties().Where(p => p.CanRead &&
+                    p.GetGetMethod().IsPublic && !p.GetGetMethod().IsStatic &&
+#endif
                     (p.Name != "Item" || p.GetIndexParameters().Length == 0) && !seenNames.Contains(p.Name));
 
                 foreach (var propertyInfo in unseenProperties)
@@ -45,7 +54,11 @@ namespace Serilog.Capturing
                     yield break;
                 }
 
+#if !NET35
                 currentTypeInfo = baseType.GetTypeInfo();
+#else
+                currentTypeInfo = baseType.GetType();
+#endif
             }
         }
     }

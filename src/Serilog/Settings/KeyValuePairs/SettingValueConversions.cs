@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ using System.Text.RegularExpressions;
 
 namespace Serilog.Settings.KeyValuePairs
 {
-    class SettingValueConversions
+    static class SettingValueConversions
     {
         // should match "The.NameSpace.TypeName::MemberName" optionally followed by
         // usual assembly qualifiers like :
@@ -36,29 +36,46 @@ namespace Serilog.Settings.KeyValuePairs
 
         public static object ConvertToType(string value, Type toType)
         {
+#if !NET35
             var toTypeInfo = toType.GetTypeInfo();
+#else
+            var toTypeInfo = toType.GetType();
+#endif
             if (toTypeInfo.IsGenericType && toType.GetGenericTypeDefinition() == typeof(Nullable<>))
             {
                 if (string.IsNullOrEmpty(value))
                     return null;
 
                 // unwrap Nullable<> type since we're not handling null situations
+#if !NET35
                 toType = toTypeInfo.GenericTypeArguments[0];
                 toTypeInfo = toType.GetTypeInfo();
+#else
+                toType = toTypeInfo.GetGenericArguments()[0];
+                toTypeInfo = toType.GetType();
+#endif
             }
 
             if (toTypeInfo.IsEnum)
                 return Enum.Parse(toType, value);
 
             var convertor = ExtendedTypeConversions
+#if !NET35
                 .Where(t => t.Key.GetTypeInfo().IsAssignableFrom(toTypeInfo))
+#else
+                .Where(t => t.Key.GetType().IsAssignableFrom(toTypeInfo))
+#endif
                 .Select(t => t.Value)
                 .FirstOrDefault();
 
             if (convertor != null)
                 return convertor(value);
 
+#if !NET35
             if ((toTypeInfo.IsInterface || toTypeInfo.IsAbstract) && !string.IsNullOrWhiteSpace(value))
+#else
+            if ((toTypeInfo.IsInterface || toTypeInfo.IsAbstract) && !string.IsNullOrEmpty(value.Trim()))
+#endif
             {
                 // check if value looks like a static property or field directive
                 // like "Namespace.TypeName::StaticProperty, AssemblyName"
@@ -66,19 +83,35 @@ namespace Serilog.Settings.KeyValuePairs
                 {
                     var accessorType = Type.GetType(accessorTypeName, throwOnError: true);
                     // is there a public static property with that name ?
+#if !NET35
                     var publicStaticPropertyInfo = accessorType.GetTypeInfo().DeclaredProperties
                         .Where(x => x.Name == memberName)
                         .Where(x => x.GetMethod != null)
                         .Where(x => x.GetMethod.IsPublic)
                         .FirstOrDefault(x => x.GetMethod.IsStatic);
+#else
+                    var publicStaticPropertyInfo = accessorType.GetType().GetProperties()
+                        .Where(x => x.Name == memberName)
+                        .Where(x => x.GetGetMethod() != null)
+                        .Where(x => x.GetGetMethod().IsPublic)
+                        .FirstOrDefault(x => x.GetGetMethod().IsStatic);
+#endif
 
                     if (publicStaticPropertyInfo != null)
                     {
+#if !NET35
                         return publicStaticPropertyInfo.GetValue(null); // static property, no instance to pass
+#else
+                        return publicStaticPropertyInfo.GetValue(null, null); // static property, no instance to pass
+#endif
                     }
 
                     // no property ? look for a public static field
+#if !NET35
                     var publicStaticFieldInfo = accessorType.GetTypeInfo().DeclaredFields
+#else
+                    var publicStaticFieldInfo = accessorType.GetType().GetFields()
+#endif
                         .Where(x => x.Name == memberName)
                         .Where(x => x.IsPublic)
                         .FirstOrDefault(x => x.IsStatic);
@@ -96,10 +129,18 @@ namespace Serilog.Settings.KeyValuePairs
                 var type = Type.GetType(value.Trim(), throwOnError: false);
                 if (type != null)
                 {
+#if !NET35
                     var ctor = type.GetTypeInfo().DeclaredConstructors.FirstOrDefault(ci =>
+#else
+                    var ctor = type.GetType().GetConstructors().FirstOrDefault(ci =>
+#endif
                     {
                         var parameters = ci.GetParameters();
+#if !NET35
                         return parameters.Length == 0 || parameters.All(pi => pi.HasDefaultValue);
+#else
+                        return parameters.Length == 0 || parameters.All(pi => null != pi?.DefaultValue);
+#endif
                     });
 
                     if (ctor == null)

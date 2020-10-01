@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ namespace Serilog.Parsing
         /// </summary>
         public override int Length => Text.Length;
 
+#if !NET35
         /// <summary>
         /// Render the token to the output.
         /// </summary>
@@ -55,6 +56,7 @@ namespace Serilog.Parsing
 
             MessageTemplateRenderer.RenderTextToken(this, output);
         }
+#endif
 
         /// <summary>
         /// Determines whether the specified <see cref="T:System.Object"/> is equal to the current <see cref="T:System.Object"/>.

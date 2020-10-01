@@ -47,8 +47,10 @@ namespace Serilog.Core.Sinks
                 }
             }
 
+#if !NET35
             if (exceptions != null)
                 throw new AggregateException("Failed to emit a log event.", exceptions);
+#endif
         }
 
         public void Dispose()

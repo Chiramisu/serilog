@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2017 Serilog Contributors
+// Copyright 2013-2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ using Serilog.Events;
 using Serilog.Parsing;
 using Serilog.Policies;
 using System.Runtime.CompilerServices;
+using System.CodeDom;
 
 namespace Serilog.Capturing
 {
@@ -236,7 +237,11 @@ namespace Serilog.Capturing
 
         bool TryConvertValueTuple(object value, Destructuring destructuring, Type valueType, out LogEventPropertyValue result)
         {
+#if !NET35
             if (!(value is IStructuralEquatable && valueType.IsConstructedGenericType))
+#else
+            if (!(value is IEquatable<Type> && valueType.IsGenericType))
+#endif
             {
                 result = null;
                 return false;
@@ -260,7 +265,11 @@ namespace Serilog.Capturing
 #endif
             {
                 var elements = new List<LogEventPropertyValue>();
+#if !NET35
                 foreach (var field in valueType.GetTypeInfo().DeclaredFields)
+#else
+                foreach (var field in valueType.GetType().GetFields())
+#endif
                 {
                     if (field.IsPublic && !field.IsStatic)
                     {
@@ -315,9 +324,15 @@ namespace Serilog.Capturing
 
         static bool TryGetDictionary(object value, Type valueType, out IDictionary dictionary)
         {
+#if !NET35
             if (valueType.IsConstructedGenericType &&
                 valueType.GetGenericTypeDefinition() == typeof(Dictionary<,>) &&
                 IsValidDictionaryKeyType(valueType.GenericTypeArguments[0]))
+#else
+            if (valueType.IsGenericType &&
+                valueType.GetGenericTypeDefinition() == typeof(Dictionary<,>) &&
+                IsValidDictionaryKeyType(valueType.GetGenericArguments()[0]))
+#endif
             {
                 dictionary = (IDictionary)value;
                 return true;
@@ -330,7 +345,11 @@ namespace Serilog.Capturing
         static bool IsValidDictionaryKeyType(Type valueType)
         {
             return BuiltInScalarTypes.Contains(valueType) ||
+#if !NET35
                    valueType.GetTypeInfo().IsEnum;
+#else
+                   valueType.GetType().IsEnum;
+#endif
         }
 
         IEnumerable<LogEventProperty> GetProperties(object value)
@@ -340,7 +359,11 @@ namespace Serilog.Capturing
                 object propValue;
                 try
                 {
+#if !NET35
                     propValue = prop.GetValue(value);
+#else
+                    propValue = prop.GetValue(value, null);
+#endif
                 }
                 catch (TargetParameterCountException)
                 {
@@ -362,10 +385,16 @@ namespace Serilog.Capturing
             }
         }
 
+#if !NET35
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal static bool IsCompilerGeneratedType(Type type)
         {
+#if !NET35
             var typeInfo = type.GetTypeInfo();
+#else
+            var typeInfo = type.GetType();
+#endif
             var typeName = type.Name;
 
             // C# Anonymous types always start with "<>" and VB's start with "VB$"

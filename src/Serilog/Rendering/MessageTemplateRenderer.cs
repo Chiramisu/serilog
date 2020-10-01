@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2017 Serilog Contributors
+// Copyright 2013-2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,8 +26,12 @@ namespace Serilog.Rendering
     {
         static readonly JsonValueFormatter JsonValueFormatter = new JsonValueFormatter("$type");
 
+#if !NET35
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Render(MessageTemplate messageTemplate, IReadOnlyDictionary<string, LogEventPropertyValue> properties, TextWriter output, string format = null, IFormatProvider formatProvider = null)
+#else
+        public static void Render(MessageTemplate messageTemplate, IDictionary<string, LogEventPropertyValue> properties, TextWriter output, string format = null, IFormatProvider formatProvider = null)
+#endif
         {
             bool isLiteral = false, isJson = false;
 
@@ -62,7 +66,11 @@ namespace Serilog.Rendering
             output.Write(tt.Text);
         }
 
+#if !NET35
         public static void RenderPropertyToken(PropertyToken pt, IReadOnlyDictionary<string, LogEventPropertyValue> properties, TextWriter output, IFormatProvider formatProvider, bool isLiteral, bool isJson)
+#else
+        public static void RenderPropertyToken(PropertyToken pt, IDictionary<string, LogEventPropertyValue> properties, TextWriter output, IFormatProvider formatProvider, bool isLiteral, bool isJson)
+#endif
         {
             if (!properties.TryGetValue(pt.PropertyName, out var propertyValue))
             {
