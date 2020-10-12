@@ -49,15 +49,4 @@ foreach ($test in Get-ChildItem test/*.Tests) {
     Pop-Location
 }
 
-foreach ($test in Get-ChildItem test/*.PerformanceTests) {
-    Push-Location $test
-
-    Write-Output "build: Building performance test project in $test"
-
-    & dotnet build -c Release
-    if($LASTEXITCODE -ne 0) { exit 2 }
-
-    Pop-Location
-}
-
 Pop-Location
